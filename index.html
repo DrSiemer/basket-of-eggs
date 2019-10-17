@@ -1,0 +1,140 @@
+<html>
+	<head>
+		<title>A basket of eggs</title>
+		<style type="text/css">
+			body {
+				text-align: center;
+			}
+			canvas {
+			    border-radius: 15px;
+			}
+		</style>
+	</head>
+	<body>
+		<br>
+		<script src="js/pathseg.js"></script>
+		<script src="js/matter.js"></script>
+		<script src="js/decomp.min.js"></script>
+		<script src="js/jquery-2.2.4.min.js"></script>
+		<script>
+
+			var Engine = Matter.Engine,
+				Render = Matter.Render,
+				Runner = Matter.Runner,
+				Common = Matter.Common,
+				MouseConstraint = Matter.MouseConstraint,
+				Mouse = Matter.Mouse,
+				World = Matter.World,
+				Vertices = Matter.Vertices,
+				Svg = Matter.Svg,
+				Bodies = Matter.Bodies;
+
+			var engine = Engine.create(),
+				world = engine.world;
+
+			var render = Render.create({
+				element: document.body,
+				engine: engine,
+				options: {
+					width: 800,
+					height: 600,
+					wireframes: false
+				}
+			});
+
+			Render.run(render);
+
+			var runner = Runner.create();
+			Runner.run(runner, engine);
+			
+			// Bg
+			var background = Bodies.rectangle(400, 300, 800, 600, {
+					isStatic: true,
+					isSensor: true,
+					render: {
+						sprite: {
+							texture: 'img/bg.jpg',
+							xScale: 1,
+							yScale: 1
+						}
+					}
+				}
+			);
+			World.add(world, background);
+
+			// Eggs
+			colors = new Array('#feb079', '#f69b54', '#e48a5a', '#e99154', '#d48659', '#f5d0a3');
+			for (var i = 0; i < 6; i += 1) {
+				(function(i) {
+					$.get('img/shape_egg.svg').done(function(data) {
+						var vertexSets = [],
+							color = colors[i];
+
+						$(data).find('path').each(function(i, path) {
+							var points = Svg.pathToVertices(path, 20);
+							vertexSets.push(Vertices.scale(points, 0.3, 0.3));
+						});
+						
+						var egg_x = 250 + i * 150;
+						var egg_y = 150;
+						if (i>2) { egg_x -= 330; egg_y += 150; }
+
+						World.add(world, Bodies.fromVertices(egg_x, egg_y, vertexSets, {
+							render: {
+								fillStyle: color,
+								strokeStyle: color,
+								lineWidth: 1
+							}
+						}, true));
+					});
+				})(i);
+			}
+
+			// Walls
+			World.add(world, [
+				Bodies.rectangle(400, 0, 800, 50, { isStatic: true }),
+				Bodies.rectangle(400, 600, 800, 50, { isStatic: true }),
+				Bodies.rectangle(800, 300, 66, 600, { isStatic: true }),
+				Bodies.rectangle(0, 300, 59, 600, { isStatic: true })
+			]);
+			
+			$.get('img/shape_basket.svg').done(function(data) {
+				var vertexSets = [];
+				$(data).find('path').each(function(i, path) {
+					var points = Svg.pathToVertices(path, 10);
+					vertexSets.push(Vertices.scale(points, 3, 3));
+				});
+
+				World.add(world, Bodies.fromVertices(400, 510, vertexSets, {
+					isStatic: true,
+					render: {
+						fillStyle: '#66360e',
+						strokeStyle: '#66360e',
+						lineWidth: 1
+					}
+				}, true));
+			});
+
+			var mouse = Mouse.create(render.canvas),
+				mouseConstraint = MouseConstraint.create(engine, {
+					mouse: mouse,
+					constraint: {
+						stiffness: 0.2,
+						render: {
+							visible: false
+						}
+					}
+				});
+
+			World.add(world, mouseConstraint);
+
+			render.mouse = mouse;
+
+			Render.lookAt(render, {
+				min: { x: 0, y: 0 },
+				max: { x: 800, y: 600 }
+			});
+
+		</script>
+	</body>
+</html>
